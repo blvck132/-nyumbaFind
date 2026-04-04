@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NyumbaFind – Find Your Home in Nairobi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --gold:      #C9A84C;
+      --gold-lt:   #E8C97A;
+      --dark:      #0D0D0D;
+      --glass:     rgba(18,18,18,0.76);
+      --white:     #FAFAF8;
+      --muted:     rgba(255,255,255,0.45);
+      --green:     #25D366;
+      --radius:    14px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;color:var(--white);background:var(--dark);}
+
+    /* SLIDESHOW */
+    #bg-slideshow{position:fixed;inset:0;z-index:0;}
+    .bg-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease;}
+    .bg-slide.active{opacity:1;}
+    .bg-slide:nth-child(1){background:linear-gradient(135deg,#1a2a1a,#2d4a2d,#1a3a2a);}
+    .bg-slide:nth-child(2){background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);}
+    .bg-slide:nth-child(3){background:linear-gradient(135deg,#2c1810,#4a2c1a,#3a1c10);}
+    .bg-slide:nth-child(4){background:linear-gradient(135deg,#1a1a1a,#2d2d2d,#1a2a3a);}
+    #bg-slideshow::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,0.38);pointer-events:none;}
+
+    /* FOREGROUND */
+    #foreground{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 16px 80px;}
+
+    /* NAV */
+    nav{width:100%;max-width:1100px;display:flex;justify-content:space-between;align-items:center;padding:26px 0 18px;}
+    .logo{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:900;letter-spacing:-.5px;}
+    .logo span{color:var(--gold);}
+    .nav-links{display:flex;gap:18px;align-items:center;}
+    .nav-links a{color:rgba(255,255,255,.7);text-decoration:none;font-size:.88rem;font-weight:500;transition:color .2s;}
+    .nav-links a:hover{color:var(--gold);}
+    .nav-btn{background:var(--gold);color:var(--dark)!important;padding:8px 18px;border-radius:30px;font-weight:700!important;}
+
+    /* HERO */
+    .hero{text-align:center;padding:36px 0 30px;max-width:740px;}
+    .hero-tag{display:inline-block;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:var(--gold-lt);font-size:.72rem;letter-spacing:2.5px;text-transform:uppercase;padding:5px 14px;border-radius:30px;margin-bottom:16px;}
+    .hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.1rem,5vw,3.7rem);font-weight:900;line-height:1.1;margin-bottom:12px;text-shadow:0 2px 30px rgba(0,0,0,.6);}
+    .hero h1 em{color:var(--gold);font-style:normal;}
+    .hero p{font-size:.97rem;color:rgba(255,255,255,.68);font-weight:300;line-height:1.7;}
+
+    /* HERO */
+    .hero{text-align:center;padding:36px 0 30px;max-width:740px;}
+    .glass-card{background:var(--glass);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:30px 34px;width:100%;max-width:900px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+    .search-tabs{display:flex;gap:10px;margin-bottom:26px;flex-wrap:wrap;}
+    .tab-btn{padding:9px 20px;border-radius:30px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.7);font-family:'DM Sans',sans-serif;font-size:.88rem;cursor:pointer;transition:all .22s;font-weight:500;}
+    .tab-btn:hover{border-color:var(--gold);color:var(--gold);}
+    .tab-btn.active{background:var(--gold);color:var(--dark);border-color:var(--gold);font-weight:700;}
+    .filter-panel{display:none;}
+    .filter-panel.active{display:block;}
+    .filter-label{font-size:.75rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-lt);margin-bottom:11px;}
+    .filter-options{display:flex;flex-wrap:wrap;gap:10px;}
+    .filter-chip{padding:10px 18px;border-radius:30px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:var(--white);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.86rem;transition:all .2s;}
+    .filter-chip:hover,.filter-chip.selected{background:var(--gold);color:var(--dark);border-color:var(--gold);font-weight:600;}
+    .search-action{margin-top:22px;text-align:right;}
+    .btn-primary{background:var(--gold);color:var(--dark);border:none;padding:12px 32px;border-radius:30px;font-family:'DM Sans',sans-serif;font-size:.97rem;font-weight:700;cursor:pointer;transition:background .2s,transform .15s;}
+    .btn-primary:hover{background:var(--gold-lt);transform:translateY(-1px);}
+
+    /* RESULTS */
+    #results-section{width:100%;max-width:1100px;margin-top:46px;display:none;}
+    #results-section.visible{display:block;}
+    .results-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px;}
+    .results-header h2{font-family:'Playfair Display',serif;font-size:1.55rem;}
+    .results-count{font-size:.83rem;color:var(--muted);}
+    .listings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;}
+
+    /* LISTING CARD */
+    .listing-card{background:var(--glass);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);overflow:hidden;transition:transform .25s,box-shadow .25s;position:relative;}
+    .listing-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.5);}
+    .listing-img{width:100%;height:196px;background:linear-gradient(135deg,#222,#333);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+    .listing-img img{width:100%;height:100%;object-fit:cover;}
+    .listing-badge{position:absolute;top:10px;left:10px;background:var(--gold);color:var(--dark);font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;}
+    .listing-info{padding:16px 18px 18px;}
+    .listing-price{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--gold);margin-bottom:3px;}
+    .listing-type{font-size:.8rem;color:var(--muted);margin-bottom:9px;}
+    .listing-location{display:flex;align-items:center;gap:5px;font-size:.86rem;color:rgba(255,255,255,.8);margin-bottom:13px;}
+    .listing-contact{display:flex;gap:8px;align-items:center;margin-top:12px;}
+    .contact-info{flex:1;}
+    .contact-phone{font-size:.82rem;color:rgba(255,255,255,.7);margin-bottom:8px;}
+    .whatsapp-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:#fff;border:none;padding:10px 14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;text-decoration:none;transition:background .2s;flex:1;}
+    .whatsapp-btn:hover{background:#1ebe5d;}
+
+    /* ADMIN */
+    #admin-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px;}
+    #admin-overlay.open{display:flex;}
+    .admin-modal{background:#161616;border:1px solid rgba(201,168,76,.22);border-radius:18px;padding:36px;width:100%;max-width:520px;position:relative;max-height:92vh;overflow-y:auto;}
+    .admin-modal h2{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:4px;}
+    .admin-modal .modal-sub{font-size:.81rem;color:var(--muted);margin-bottom:22px;}
+    .close-btn{position:absolute;top:16px;right:20px;background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;}
+    .fgroup{margin-bottom:16px;}
+  </style>
+</head>
+<body>
+
+<div id="bg-slideshow">
+  <div class="bg-slide active"></div>
+  <div class="bg-slide"></div>
+  <div class="bg-slide"></div>
+  <div class="bg-slide"></div>
+</div>
+
+<div id="foreground">
+  <nav>
+    <div class="logo">Nyumba<span>Find</span></div>
+    <div class="nav-links">
+      <a href="#">Browse Vacancies</a>
+      <a href="#" onclick="openAdmin(event)" class="nav-btn">List Your Property</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-tag">Nairobi Rentals</div>
+    <h1>Find Your Next <em>Home</em> in Minutes</h1>
+    <p>Browse verified vacancies across Kahawa, Kenyatta Market & beyond — contact caretakers directly on WhatsApp, completely free.</p>
+  </div>
+
+  <!-- SEARCH CARD -->
+  <div class="glass-card">
+    <div class="search-tabs">
+      <button class="tab-btn active" onclick="switchTab('price',this)">🏷️ Search by Price</button>
+      <button class="tab-btn" onclick="switchTab('area',this)">📍 Search by Area</button>
+      <button class="tab-btn" onclick="switchTab('size',this)">📐 Search by Size</button>
+    </div>
+    <div class="filter-panel active" id="panel-price">
+      <p class="filter-label">Select a Price Range (KES/month)</p>
+      <div class="filter-options">
+        <button class="filter-chip" onclick="selectChip(this,'price','5000-7000')">KES 5,000 – 7,000<br><small style="font-size:.72rem;opacity:.6">Single Room / Bedsitter</small></button>
+        <button class="filter-chip" onclick="selectChip(this,'price','8000-10000')">KES 8,000 – 10,000<br><small style="font-size:.72rem;opacity:.6">Studio / 1 Bedroom</small></button>
+        <button class="filter-chip" onclick="selectChip(this,'price','10000-15000')">KES 10,000 – 15,000<br><small style="font-size:.72rem;opacity:.6">2 Bedroom</small></button>
+        <button class="filter-chip" onclick="selectChip(this,'price','15000-20000')">KES 15,000 – 20,000<br><small style="font-size:.72rem;opacity:.6">3 Bedroom</small></button>
+      </div>
+    </div>
+    <div class="filter-panel" id="panel-area">
+      <p class="filter-label">Select an Area</p>
+      <div class="filter-options">
+        <button class="filter-chip" onclick="selectChip(this,'area','Kahawa Wendani')">📌 Kahawa Wendani</button>
+        <button class="filter-chip" onclick="selectChip(this,'area','Kahawa Sukari')">📌 Kahawa Sukari</button>
+        <button class="filter-chip" onclick="selectChip(this,'area','Kenyatta Market')">📌 Kenyatta Market Area</button>
+        <button class="filter-chip" onclick="selectChip(this,'area','Kahawa Garrison')">📌 Kahawa Garrison</button>
+      </div>
+    </div>
+    <div class="filter-panel" id="panel-size">
+      <p class="filter-label">Select House Size</p>
+      <div class="filter-options">
+        <button class="filter-chip" onclick="selectChip(this,'size','Single Room')">Single Room</button>
+        <button class="filter-chip" onclick="selectChip(this,'size','Bedsitter')">Bedsitter</button>
+        <button class="filter-chip" onclick="selectChip(this,'size','Studio')">Studio</button>
+        <button class="filter-chip" onclick="selectChip(this,'size','1 Bedroom')">1 Bedroom</button>
+        <button class="filter-chip" onclick="selectChip(this,'size','2 Bedroom')">2 Bedroom</button>
+        <button class="filter-chip" onclick="selectChip(this,'size','3 Bedroom')">3 Bedroom</button>
+      </div>
+    </div>
+    <div class="search-action">
+      <button class="btn-primary" onclick="doSearch()">Search Vacancies →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results-section">
+    <div class="results-header">
+      <h2 id="results-title">Available Vacancies</h2>
+      <span class="results-count" id="results-count"></span>
+    </div>
+    <div class="listings-grid" id="listings-grid"></div>
+  </div>
+</div>
+
+<!-- ─── ADMIN PANEL ───────────────────────────── -->
+<div id="admin-overlay">
+  <div class="admin-modal">
+    <button class="close-btn" onclick="closeAdmin()">✕</button>
+
+    <div id="admin-login-view">
+      <h2>Caretaker Portal</h2>
+      <p class="modal-sub">Sign in to manage your vacancy listings — completely free!</p>
+      <div class="fgroup"><label>Username</label><input type="text" id="login-user" placeholder="admin"/></div>
+      <div class="fgroup"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••"/></div>
+      <div class="admin-status" id="login-status"></div>
+      <button class="btn-primary" style="width:100%;margin-top:10px" onclick="doLogin()">Login</button>
+    </div>
+
+    <div id="admin-upload-view" style="display:none">
+      <h2>Upload Vacancy</h2>
+      <p class="modal-sub">Add a new listing to reach thousands of tenants — 100% FREE</p>
+
+      <div class="fgroup">
+        <label>Location / Area</label>
+        <select id="u-area">
+          <option>Kahawa Wendani</option><option>Kahawa Sukari</option>
+          <option>Kenyatta Market Area</option><option>Kahawa Garrison</option>
+        </select>
+      </div>
+      <div class="fgroup">
+        <label>House Type</label>
+        <select id="u-size">
+          <option>Single Room</option><option>Bedsitter</option><option>Studio</option>
+          <option>1 Bedroom</option><option>2 Bedroom</option><option>3 Bedroom</option>
+        </select>
+      </div>
+      <div class="fgroup"><label>Monthly Rent (KES)</label><input type="number" id="u-price" placeholder="e.g. 6500"/></div>
+      <div class="fgroup"><label>Caretaker WhatsApp</label><input type="tel" id="u-phone" placeholder="+254 7XX XXX XXX"/></div>
+
+      <div class="fgroup">
+        <label>Upload Photos</label>
+        <div class="upload-area" onclick="document.getElementById('u-photos').click()">
+          <svg width="28" height="28" fill="none" stroke="rgba(201,168,76,.5)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <p>Click to select images</p>
+          <input type="file" id="u-photos" multiple accept="image/*" onchange="previewImages(this)"/>
+        </div>
+        <div id="preview-container"></div>
+      </div>
+
+      <div class="admin-status" id="upload-status"></div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="submitListing()">Publish Listing</button>
+      <button class="btn-ghost" onclick="doLogout()">Log out</button>
+    </div>
+  </div>
+</div>
+
+<footer>© 2025 NyumbaFind · Nairobi, Kenya · 100% Free Property Listings</footer>
+
+<script>
+// ─── CONFIG ─────────────────────────────────────────────
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'nyumba2025';   // Change before going live!
+const API_BASE   = 'http://localhost:5000';
+
+// ─── SLIDESHOW ───────────────────────────────────────────
+let si = 0;
+const slides = document.querySelectorAll('.bg-slide');
+setInterval(() => {
+  slides[si].classList.remove('active');
+  si = (si + 1) % slides.length;
+  slides[si].classList.add('active');
+}, 3000);
+
+// ─── TABS & CHIPS ────────────────────────────────────────
+let currentTab = 'price', currentFilter = null;
+function switchTab(tab, btn) {
+  currentTab = tab; currentFilter = null;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.filter-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('selected'));
+}
+function selectChip(el, tab, val) {
+  document.querySelectorAll(`#panel-${tab} .filter-chip`).forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected'); currentFilter = val;
+}
+
+// ─── SEARCH ──────────────────────────────────────────────
+async function doSearch() {
+  if (!currentFilter) { alert('Please select a filter first.'); return; }
+  try {
+    const r = await fetch(`${API_BASE}/api/listings?type=${currentTab}&value=${encodeURIComponent(currentFilter)}`);
+    renderListings((await r.json()).listings, currentFilter);
+  } catch {
+    renderListings(demoData(currentTab, currentFilter), currentFilter);
+  }
+}
+
+function demoData(type, value) {
+  const pool = [
+    { id:1, area:'Kahawa Wendani',       size:'Single Room', price:6000,  phone:'+254712345678', image:null },
+    { id:2, area:'Kahawa Sukari',        size:'Bedsitter',   price:6500,  phone:'+254723456789', image:null },
+    { id:3, area:'Kahawa Garrison',      size:'Studio',      price:9000,  phone:'+254734567890', image:null },
+    { id:4, area:'Kenyatta Market Area', size:'1 Bedroom',   price:10000, phone:'+254745678901', image:null },
+    { id:5, area:'Kahawa Wendani',       size:'2 Bedroom',   price:13000, phone:'+254756789012', image:null },
+    { id:6, area:'Kahawa Sukari',        size:'3 Bedroom',   price:17000, phone:'+254767890123', image:null },
+    { id:7, area:'Kahawa Wendani',       size:'Bedsitter',   price:5500,  phone:'+254778901234', image:null },
+    { id:8, area:'Kenyatta Market Area', size:'Single Room', price:5000,  phone:'+254789012345', image:null },
+  ];
+  let r = pool;
+  if (type === 'price') { const [mn,mx] = value.split('-').map(Number); r = pool.filter(l => l.price >= mn && l.price <= mx); }
+  else if (type === 'area') r = pool.filter(l => l.area === value);
+  else if (type === 'size') r = pool.filter(l => l.size === value);
+  return r;
+}
+
+function renderListings(list, label) {
+  const grid = document.getElementById('listings-grid');
+  document.getElementById('results-title').textContent = `Vacancies – ${label}`;
+  document.getElementById('results-count').textContent = `${list.length} propert${list.length===1?'y':'ies'} found`;
+  grid.innerHTML = '';
+  if (!list.length) {
+    grid.innerHTML = '<p style="color:var(--muted);grid-column:1/-1;padding:28px 0">No vacancies found. Check back soon!</p>';
+  } else {
+    list.slice(0,50).forEach(l => {
+      grid.appendChild(buildCard(l));
+    });
+  }
+  document.getElementById('results-section').classList.add('visible');
+  document.getElementById('results-section').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ─── CARD BUILDER ─────────────────────────────────────────
+function buildCard(l) {
+  const card = document.createElement('div');
+  card.className = 'listing-card';
+  const imgHTML = l.image
+    ? `<img src="${API_BASE}/uploads/${l.image}" alt="Vacancy"/>`
+    : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e2d1e,#293d29);color:rgba(255,255,255,.22);flex-direction:column;gap:7px;font-size:.74rem"><svg width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m3 9 4-4 4 4 4-4 4 4"/><circle cx="8.5" cy="13.5" r="1.5"/></svg>Photo Coming Soon</div>`;
+
+  const msg = encodeURIComponent('Hi, I found your vacancy on NyumbaFind. Is it still available?');
+  const waLink = `https://wa.me/${l.phone.replace(/\D/g,'')}?text=${msg}`;
+
+  card.innerHTML = `
+    <div class="listing-img">
+      ${imgHTML}
+      <span class="listing-badge">${l.size}</span>
+    </div>
+    <div class="listing-info">
+      <div class="listing-price">KES ${Number(l.price).toLocaleString()}<span style="font-size:.8rem;font-family:'DM Sans';font-weight:300;color:var(--muted)">/mo</span></div>
+      <div class="listing-type">${l.size}</div>
+      <div class="listing-location">
+        <svg width="13" height="13" fill="none" stroke="var(--gold)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        ${l.area}
+      </div>
+      <div class="listing-contact">
+        <div class="contact-info">
+          <div class="contact-phone">${l.phone}</div>
+          <a class="whatsapp-btn" href="${waLink}" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>`;
+  return card;
+}
+
+// ─── ADMIN ───────────────────────────────────────────────
+function openAdmin(e) { e.preventDefault(); document.getElementById('admin-overlay').classList.add('open'); }
+function closeAdmin() { document.getElementById('admin-overlay').classList.remove('open'); }
+
+function doLogin() {
+  const u = document.getElementById('login-user').value;
+  const p = document.getElementById('login-pass').value;
+  const st = document.getElementById('login-status');
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    document.getElementById('admin-login-view').style.display  = 'none';
+    document.getElementById('admin-upload-view').style.display = 'block';
+  } else showSt(st,'error','Incorrect username or password.');
+}
+function doLogout() {
+  document.getElementById('admin-login-view').style.display  = 'block';
+  document.getElementById('admin-upload-view').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+function previewImages(input) {
+  const c = document.getElementById('preview-container');
+  c.innerHTML = '';
+  Array.from(input.files).forEach(f => {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(f);
+    c.appendChild(img);
+  });
+}
+
+async function submitListing() {
+  const price = document.getElementById('u-price').value;
+  const phone = document.getElementById('u-phone').value;
+  const st    = document.getElementById('upload-status');
+  if (!price || !phone) { showSt(st,'error','Please fill in all fields.'); return; }
+
+  const form = new FormData();
+  form.append('area',     document.getElementById('u-area').value);
+  form.append('size',     document.getElementById('u-size').value);
+  form.append('price',    price);
+  form.append('phone',    phone);
+  const files = document.getElementById('u-photos').files;
+  if (files[0]) form.append('image', files[0]);
+
+  try {
+    const r = await fetch(`${API_BASE}/api/listings`, { method:'POST', body: form });
+    const d = await r.json();
+    if (d.success) {
+      showSt(st,'success','✓ Listing published!');
+      document.getElementById('u-price').value = '';
+      document.getElementById('u-phone').value = '';
+      document.getElementById('preview-container').innerHTML = '';
+    } else throw new Error(d.message);
+  } catch(e) {
+    showSt(st,'error', e.message || '⚠ Backend not connected. Run python app.py.');
+  }
+}
+
+// ─── BANNER ADS FROM BACKEND ────────────────────────────
+// ─── HELPERS ─────────────────────────────────────────────
+function showSt(el, type, msg) {
+  el.textContent = msg;
+  el.className   = `admin-status ${type}`;
+  el.style.display = 'block';
+}
+
+// Close overlays on outside click
+['pay-overlay','sub-overlay','admin-overlay'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>
