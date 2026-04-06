@@ -13,6 +13,10 @@ import sqlite3, os, uuid
 from werkzeug.utils import secure_filename
 from datetime import datetime
 
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
+
 app = Flask(__name__)
 CORS(app)
 
@@ -40,6 +44,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS listings (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
                 area            TEXT    NOT NULL,
+                location        TEXT,
                 size            TEXT    NOT NULL,
                 price           INTEGER NOT NULL,
                 phone           TEXT    NOT NULL,
@@ -47,6 +52,12 @@ def init_db():
                 active          INTEGER DEFAULT 1,
                 created         TEXT    DEFAULT (datetime('now'))
             )""")
+
+        # Add location column if it doesn't exist (for existing databases)
+        try:
+            conn.execute("ALTER TABLE listings ADD COLUMN location TEXT")
+        except:
+            pass
 
         conn.commit()
 
@@ -126,14 +137,15 @@ def get_listings():
 def add_listing():
     """
     Create a new FREE listing. No limits, no payments, no verification required.
-    Form fields: area, size, price, phone, image (file)
+    Form fields: area, size, price, phone, location, image (file)
     """
     area     = request.form.get('area', '').strip()
+    location = request.form.get('location', '').strip()
     size     = request.form.get('size', '').strip()
     price    = request.form.get('price', '').strip()
     phone    = request.form.get('phone', '').strip()
 
-    if not all([area, size, price, phone]):
+    if not all([area, size, price, phone, location]):
         return jsonify({'success': False, 'message': 'All fields are required'}), 400
 
     try:
@@ -145,9 +157,9 @@ def add_listing():
 
     with get_db() as conn:
         conn.execute(
-            """INSERT INTO listings (area, size, price, phone, image)
-               VALUES (?,?,?,?,?)""",
-            (area, size, price, phone, image_name)
+            """INSERT INTO listings (area, location, size, price, phone, image)
+               VALUES (?,?,?,?,?,?)""",
+            (area, location, size, price, phone, image_name)
         )
         conn.commit()
 
