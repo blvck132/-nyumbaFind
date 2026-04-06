@@ -17,9 +17,10 @@ app = Flask(__name__)
 CORS(app)
 
 # ── CONFIG ──────────────────────────────────────────────────────
-UPLOAD_FOLDER      = 'uploads'
+BASE_DIR           = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER      = os.path.join(BASE_DIR, 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
-DB_PATH            = 'nyumbafind.db'
+DB_PATH            = os.path.join(BASE_DIR, 'nyumbafind.db')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -85,7 +86,7 @@ def save_upload(file, folder):
 # ── STATIC FILES ────────────────────────────────────────────────
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory(BASE_DIR, 'index.html')
 
 @app.route('/uploads/<filename>')
 def serve_upload(filename):
